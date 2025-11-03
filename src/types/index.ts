@@ -115,3 +115,32 @@ export interface CreateBudgetDTO {
     validUntil?: Date;
     notes?: string;
 }
+// ==================== CATEGORIES ====================
+
+export interface ICategory extends Document {
+    name: string;
+    description?: string;
+    defaultMargin: number; // percentage
+    color?: string; // for UI
+    order: number;
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateCategoryDTO {
+    name: string;
+    description?: string;
+    defaultMargin: number;
+    color?: string;
+    order?: number;
+}
+
+export interface UpdateCategoryDTO {
+    name?: string;
+    description?: string;
+    defaultMargin?: number;
+    color?: string;
+    order?: number;
+    active?: boolean;
+}
