@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
-import { IMaterial } from '../types';
+import { IResource } from '../types';
 
-const MaterialSchema = new Schema<IMaterial>({
+const ResourceSchema = new Schema<IResource>({
     name: {
         type: String,
         required: true,
@@ -10,6 +10,12 @@ const MaterialSchema = new Schema<IMaterial>({
     description: {
         type: String,
         trim: true
+    },
+    type: {
+        type: String,
+        enum: ['material', 'labor', 'equipment'],
+        required: true,
+        default: 'material'
     },
     unit: {
         type: String,
@@ -21,9 +27,9 @@ const MaterialSchema = new Schema<IMaterial>({
         required: true,
         min: 0
     },
-    category: {
+    categoryId: {
         type: String,
-        trim: true
+        ref: 'Category'
     },
     lastUpdated: {
         type: Date,
@@ -35,11 +41,13 @@ const MaterialSchema = new Schema<IMaterial>({
     }
 });
 
-MaterialSchema.pre('save', function (next) {
+ResourceSchema.pre('save', function (next) {
     this.lastUpdated = new Date();
     next();
 });
 
-MaterialSchema.index({ name: 1, category: 1 });
+ResourceSchema.index({ name: 1, type: 1 });
+ResourceSchema.index({ type: 1 });
+ResourceSchema.index({ categoryId: 1 });
 
-export default mongoose.model<IMaterial>('Material', MaterialSchema);
+export default mongoose.model<IResource>('Resource', ResourceSchema);

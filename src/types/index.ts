@@ -144,3 +144,36 @@ export interface UpdateCategoryDTO {
     order?: number;
     active?: boolean;
 }
+
+// ==================== RESOURCES ====================
+
+export type ResourceType = 'material' | 'labor' | 'equipment';
+
+export interface IResource extends Document {
+    name: string;
+    description?: string;
+    type: ResourceType;
+    unit: string;
+    price: number;
+    categoryId?: string;
+    lastUpdated: Date;
+    createdAt: Date;
+}
+
+export interface CreateResourceDTO {
+    name: string;
+    description?: string;
+    type: ResourceType;
+    unit: string;
+    price: number;
+    categoryId?: string;
+}
+
+export interface UpdateResourceDTO {
+    name?: string;
+    description?: string;
+    type?: ResourceType;
+    unit?: string;
+    price?: number;
+    categoryId?: string;
+}

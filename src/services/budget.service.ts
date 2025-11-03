@@ -1,6 +1,6 @@
 import Budget from '../models/Budget';
 import Client from '../models/Client';
-import Material from '../models/Material';
+import Material from '../models/Resource';
 import { CreateBudgetDTO } from '../types';
 
 class BudgetService {
