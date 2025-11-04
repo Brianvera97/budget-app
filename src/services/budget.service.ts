@@ -1,10 +1,11 @@
 import Budget from '../models/Budget';
 import Client from '../models/Client';
-import Material from '../models/Resource';
-import { CreateBudgetDTO } from '../types';
+import Resource from '../models/Resource';
+import CompositeItem from '../models/CompositeItem';
+import compositeItemService from './compositeItem.service';
+import { CreateBudgetDTO, IBudgetItem } from '../types';
 
 class BudgetService {
-    // Generar número de presupuesto único
     private async generateBudgetNumber(): Promise<string> {
         const year = new Date().getFullYear();
         const count = await Budget.countDocuments({
@@ -14,49 +15,81 @@ class BudgetService {
         return `BUD-${year}-${number}`;
     }
 
-    // Calcular subtotales de items
-    private calculateItemSubtotals(items: any[]) {
-        return items.map(item => ({
-            ...item,
-            subtotal: item.quantity * item.unitPrice
-        }));
+    private async processItems(items: any[]): Promise<IBudgetItem[]> {
+        const processedItems: IBudgetItem[] = [];
+
+        for (const item of items) {
+            let processedItem: IBudgetItem;
+
+            if (item.itemType === 'resource') {
+                // Resource directo
+                const resource = await Resource.findById(item.resourceId);
+                if (!resource) {
+                    throw new Error(`RESOURCE_NOT_FOUND: ${item.resourceId}`);
+                }
+
+                processedItem = {
+                    itemType: 'resource',
+                    resourceId: item.resourceId,
+                    description: item.description || resource.name,
+                    quantity: item.quantity,
+                    unitPrice: resource.price, // Snapshot del precio actual
+                    unit: resource.unit,
+                    subtotal: resource.price * item.quantity
+                };
+
+            } else if (item.itemType === 'composite') {
+                // CompositeItem (calculado dinámicamente)
+                const compositeItem = await compositeItemService.getById(item.compositeItemId);
+                if (!compositeItem) {
+                    throw new Error(`COMPOSITE_ITEM_NOT_FOUND: ${item.compositeItemId}`);
+                }
+
+                processedItem = {
+                    itemType: 'composite',
+                    compositeItemId: item.compositeItemId,
+                    description: item.description || compositeItem.name,
+                    quantity: item.quantity,
+                    unitPrice: compositeItem.finalPrice, // Snapshot del precio calculado
+                    unit: compositeItem.unit,
+                    subtotal: compositeItem.finalPrice * item.quantity
+                };
+
+            } else {
+                throw new Error('INVALID_ITEM_TYPE');
+            }
+
+            processedItems.push(processedItem);
+        }
+
+        return processedItems;
     }
 
     async create(data: CreateBudgetDTO) {
-        // Verificar que el cliente existe
+        // Validate client exists
         const client = await Client.findById(data.clientId);
         if (!client) {
             throw new Error('CLIENT_NOT_FOUND');
         }
 
-        // Validar que si hay materialId, el material existe
-        for (const item of data.items) {
-            if (item.materialId) {
-                const material = await Material.findById(item.materialId);
-                if (!material) {
-                    throw new Error(`MATERIAL_NOT_FOUND: ${item.materialId}`);
-                }
-            }
-        }
+        // Process items (get current prices)
+        const processedItems = await this.processItems(data.items);
 
-        // Calcular subtotales de items
-        const itemsWithSubtotals = this.calculateItemSubtotals(data.items);
-
-        // Generar número de presupuesto
+        // Generate budget number
         const budgetNumber = await this.generateBudgetNumber();
 
-        // Crear presupuesto
+        // Create budget
         const budget = await Budget.create({
             budgetNumber,
             clientId: data.clientId,
             projectName: data.projectName,
             projectDescription: data.projectDescription,
-            items: itemsWithSubtotals,
+            items: processedItems,
             validUntil: data.validUntil,
             notes: data.notes
         });
 
-        // Calcular totales
+        // Calculate totals
         (budget as any).calculateTotals();
         await budget.save();
 
@@ -99,7 +132,7 @@ class BudgetService {
             throw new Error('BUDGET_NOT_FOUND');
         }
 
-        // Si cambia el cliente, verificar que existe
+        // Validate client if changed
         if (data.clientId && data.clientId !== budget.clientId) {
             const client = await Client.findById(data.clientId);
             if (!client) {
@@ -107,20 +140,20 @@ class BudgetService {
             }
         }
 
-        // Si cambian los items, recalcular subtotales
+        // Process items if changed
         if (data.items) {
-            const itemsWithSubtotals = this.calculateItemSubtotals(data.items);
-            budget.items = itemsWithSubtotals as any;
+            const processedItems = await this.processItems(data.items);
+            budget.items = processedItems as any;
         }
 
-        // Actualizar otros campos
+        // Update other fields
         if (data.projectName !== undefined) budget.projectName = data.projectName;
         if (data.projectDescription !== undefined) budget.projectDescription = data.projectDescription;
         if (data.validUntil !== undefined) budget.validUntil = data.validUntil;
         if (data.notes !== undefined) budget.notes = data.notes;
         if (data.clientId !== undefined) budget.clientId = data.clientId;
 
-        // Recalcular totales
+        // Recalculate totals
         (budget as any).calculateTotals();
         await budget.save();
 
@@ -148,7 +181,7 @@ class BudgetService {
             throw new Error('BUDGET_NOT_FOUND');
         }
 
-        return { message: 'Presupuesto eliminado correctamente' };
+        return { message: 'Budget deleted successfully' };
     }
 
     async duplicate(budgetId: string) {
@@ -163,7 +196,7 @@ class BudgetService {
         const newBudget = await Budget.create({
             budgetNumber,
             clientId: originalBudget.clientId,
-            projectName: `${originalBudget.projectName} (Copia)`,
+            projectName: `${originalBudget.projectName} (Copy)`,
             projectDescription: originalBudget.projectDescription,
             items: originalBudget.items,
             status: 'draft',

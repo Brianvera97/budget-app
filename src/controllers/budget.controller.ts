@@ -10,25 +10,41 @@ export const createBudget = async (req: AuthRequest, res: Response): Promise<voi
         if (!data.clientId || !data.items || data.items.length === 0) {
             res.status(400).json({
                 success: false,
-                message: 'Cliente e items son requeridos'
+                message: 'Client and items are required'
             });
             return;
         }
 
-        // Validar items
+        // Validate items
         for (const item of data.items) {
-            if (!item.description || !item.quantity || !item.unitPrice || !item.unit) {
+            if (!item.itemType || !['resource', 'composite'].includes(item.itemType)) {
                 res.status(400).json({
                     success: false,
-                    message: 'Cada item debe tener descripción, cantidad, precio unitario y unidad'
+                    message: 'Each item must have a valid itemType (resource or composite)'
                 });
                 return;
             }
 
-            if (item.quantity <= 0 || item.unitPrice < 0) {
+            if (item.itemType === 'resource' && !item.resourceId) {
                 res.status(400).json({
                     success: false,
-                    message: 'Cantidad debe ser mayor a 0 y precio no puede ser negativo'
+                    message: 'resourceId is required for resource items'
+                });
+                return;
+            }
+
+            if (item.itemType === 'composite' && !item.compositeItemId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'compositeItemId is required for composite items'
+                });
+                return;
+            }
+
+            if (!item.quantity || item.quantity <= 0) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Quantity must be greater than 0'
                 });
                 return;
             }
@@ -38,31 +54,39 @@ export const createBudget = async (req: AuthRequest, res: Response): Promise<voi
 
         res.status(201).json({
             success: true,
-            message: 'Presupuesto creado correctamente',
+            message: 'Budget created successfully',
             data: budget
         });
     } catch (error: any) {
-        console.error('Error en createBudget:', error);
+        console.error('Error in createBudget:', error);
 
         if (error.message === 'CLIENT_NOT_FOUND') {
             res.status(404).json({
                 success: false,
-                message: 'Cliente no encontrado'
+                message: 'Client not found'
             });
             return;
         }
 
-        if (error.message.startsWith('MATERIAL_NOT_FOUND')) {
+        if (error.message.startsWith('RESOURCE_NOT_FOUND')) {
             res.status(404).json({
                 success: false,
-                message: 'Material no encontrado'
+                message: 'One or more resources not found'
+            });
+            return;
+        }
+
+        if (error.message.startsWith('COMPOSITE_ITEM_NOT_FOUND')) {
+            res.status(404).json({
+                success: false,
+                message: 'One or more composite items not found'
             });
             return;
         }
 
         res.status(500).json({
             success: false,
-            message: 'Error al crear presupuesto'
+            message: 'Error creating budget'
         });
     }
 };

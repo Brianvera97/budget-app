@@ -17,21 +17,17 @@ export interface IClient extends Document {
     updatedAt: Date;
 }
 
-export interface IMaterial extends Document {
-    name: string;
-    description?: string;
-    unit: string;
-    price: number;
-    category?: string;
-    lastUpdated: Date;
-    createdAt: Date;
-}
+
+
+// ==================== BUDGETS (NUEVO) ====================
 
 export interface IBudgetItem {
-    materialId?: string;
+    itemType: 'resource' | 'composite';
+    resourceId?: string; // Si itemType = 'resource'
+    compositeItemId?: string; // Si itemType = 'composite'
     description: string;
     quantity: number;
-    unitPrice: number;
+    unitPrice: number; // Snapshot del precio al crear
     unit: string;
     subtotal: number;
 }
@@ -52,6 +48,22 @@ export interface IBudget extends Document {
     updatedAt: Date;
 }
 
+export interface CreateBudgetItemDTO {
+    itemType: 'resource' | 'composite';
+    resourceId?: string;
+    compositeItemId?: string;
+    description?: string;
+    quantity: number;
+}
+
+export interface CreateBudgetDTO {
+    clientId: string;
+    projectName?: string;
+    projectDescription?: string;
+    items: CreateBudgetItemDTO[];
+    validUntil?: Date;
+    notes?: string;
+}
 // DTOs para Auth
 export interface RegisterDTO {
     email: string;
@@ -81,31 +93,7 @@ export interface UpdateClientDTO {
     ruc?: string;
 }
 
-// DTOs para Material
-export interface CreateMaterialDTO {
-    name: string;
-    description?: string;
-    unit: string;
-    price: number;
-    category?: string;
-}
 
-export interface UpdateMaterialDTO {
-    name?: string;
-    description?: string;
-    unit?: string;
-    price?: number;
-    category?: string;
-}
-
-// DTOs para Budget
-export interface CreateBudgetItemDTO {
-    materialId?: string;
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    unit: string;
-}
 
 export interface CreateBudgetDTO {
     clientId: string;

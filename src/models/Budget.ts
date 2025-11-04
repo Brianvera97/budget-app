@@ -2,9 +2,18 @@ import mongoose, { Schema } from 'mongoose';
 import { IBudget, IBudgetItem } from '../types';
 
 const BudgetItemSchema = new Schema<IBudgetItem>({
-    materialId: {
+    itemType: {
         type: String,
-        ref: 'Material'
+        enum: ['resource', 'composite'],
+        required: true
+    },
+    resourceId: {
+        type: String,
+        ref: 'Resource'
+    },
+    compositeItemId: {
+        type: String,
+        ref: 'CompositeItem'
     },
     description: {
         type: String,
