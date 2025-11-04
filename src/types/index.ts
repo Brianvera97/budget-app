@@ -177,3 +177,70 @@ export interface UpdateResourceDTO {
     price?: number;
     categoryId?: string;
 }
+// ==================== COMPOSITE ITEMS ====================
+
+export interface ICompositeItemComponent {
+    resourceId: string;
+    quantity: number;
+}
+
+export interface ICompositeItem extends Document {
+    name: string;
+    description?: string;
+    unit: string;
+    categoryId: string;
+    composition: ICompositeItemComponent[];
+    customMargin?: number; // Override category default
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CreateCompositeItemDTO {
+    name: string;
+    description?: string;
+    unit: string;
+    categoryId: string;
+    composition: Array<{
+        resourceId: string;
+        quantity: number;
+    }>;
+    customMargin?: number;
+}
+
+export interface UpdateCompositeItemDTO {
+    name?: string;
+    description?: string;
+    unit?: string;
+    categoryId?: string;
+    composition?: Array<{
+        resourceId: string;
+        quantity: number;
+    }>;
+    customMargin?: number;
+    active?: boolean;
+}
+
+export interface CompositeItemCalculation {
+    id: string;
+    name: string;
+    description?: string;
+    unit: string;
+    category: any;
+    composition: Array<{
+        resource: any;
+        quantity: number;
+        subtotal: number;
+    }>;
+    costBreakdown: {
+        materials: number;
+        labor: number;
+        equipment: number;
+        total: number;
+    };
+    margin: number;
+    finalPrice: number;
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}

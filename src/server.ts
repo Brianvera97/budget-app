@@ -9,6 +9,7 @@ import clientRoutes from './routes/client.routes';
 import resourceRoutes from './routes/resource.routes';
 import budgetRoutes from './routes/budget.routes';
 import categoryRoutes from './routes/category.routes';
+import compositeItemRoutes from './routes/compositeItem.routes';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/clients', clientRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/composite-items', compositeItemRoutes);
 
 // Conexión a DB y inicio del servidor
 const startServer = async () => {
